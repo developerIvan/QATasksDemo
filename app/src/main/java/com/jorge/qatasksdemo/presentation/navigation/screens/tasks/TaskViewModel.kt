@@ -25,6 +25,24 @@ class TaskViewModel : ViewModel() {
         _tasks.value += newTask
     }
 
+    fun updateTask(
+        id: Int,
+        title: String,
+        description: String
+    ) {
+        _tasks.value =
+            _tasks.value.map { task ->
+                if (task.id == id) {
+                    task.copy(
+                        title = title,
+                        description = description
+                    )
+                } else {
+                    task
+                }
+            }
+    }
+
     fun deleteTask(id: Int) {
 
         _tasks.value =
