@@ -1,6 +1,5 @@
 package com.jorge.qatasksdemo.presentation.navigation.screens.tasks
 
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,38 +15,56 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTaskScreen(
-    onSave: (String, String) -> Unit,
+fun EditTaskScreen(
+    taskId: Int,
+    viewModel: TaskViewModel,
     onBack: () -> Unit
 ) {
+    val tasks by viewModel.tasks.collectAsState()
+    val task = tasks.firstOrNull { it.id == taskId }
 
-    var title by remember {
-        mutableStateOf("")
+    var title by rememberSaveable(taskId) { mutableStateOf("") }
+    var description by rememberSaveable(taskId) { mutableStateOf("") }
+    var initialized by rememberSaveable(taskId) { mutableStateOf(false) }
+
+    LaunchedEffect(task) {
+        if (!initialized && task != null) {
+            title = task.title
+            description = task.description
+            initialized = true
+        }
     }
 
-    var description by remember {
-        mutableStateOf("")
-    }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Add Task",
+                        text = "Edit Task",
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
@@ -63,6 +80,12 @@ fun AddTaskScreen(
                     }
                 }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.testTag("edit_snackbar_host")
+            )
         }
     ) { padding ->
         Column(
@@ -74,15 +97,8 @@ fun AddTaskScreen(
 
             OutlinedTextField(
                 value = title,
-                onValueChange = {
-                    title = it
-                },
-                label = {
-                    Text("Title")
-                },
-                placeholder = {
-                    Text("e.g. Add delete test")
-                },
+                onValueChange = { title = it },
+                label = { Text("Title") },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -93,15 +109,8 @@ fun AddTaskScreen(
 
             OutlinedTextField(
                 value = description,
-                onValueChange = {
-                    description = it
-                },
-                label = {
-                    Text("Description")
-                },
-                placeholder = {
-                    Text("Short details about the task")
-                },
+                onValueChange = { description = it },
+                label = { Text("Description") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("task_description_input")
@@ -111,10 +120,37 @@ fun AddTaskScreen(
 
             Button(
                 onClick = {
-                    onSave(
-                        title,
-                        description
+                    val previous = task
+
+                    viewModel.updateTask(
+                        id = taskId,
+                        title = title,
+                        description = description
                     )
+
+                    scope.launch {
+                        // If we cannot locate the previous value, just go back.
+                        if (previous == null) {
+                            onBack()
+                            return@launch
+                        }
+
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Task updated",
+                            actionLabel = "Undo",
+                            withDismissAction = true
+                        )
+
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.updateTask(
+                                id = taskId,
+                                title = previous.title,
+                                description = previous.description
+                            )
+                        }
+
+                        onBack()
+                    }
                 },
                 enabled = title.isNotBlank(),
                 modifier = Modifier
