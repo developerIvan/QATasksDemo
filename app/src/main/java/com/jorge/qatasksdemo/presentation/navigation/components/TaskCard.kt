@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Card
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,10 +34,11 @@ fun TaskCard(
     onEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("task_item_${task.id}")
+            .testTag("task_item_${task.id}"),
+        colors = CardDefaults.elevatedCardColors()
     ) {
         Row(
             modifier = Modifier
@@ -55,13 +59,27 @@ fun TaskCard(
             ) {
                 val textDecoration = if (task.completed) TextDecoration.LineThrough else null
 
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    textDecoration = textDecoration
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = task.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        textDecoration = textDecoration,
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                    AssistChip(
+                        onClick = onToggleCompleted,
+                        label = {
+                            Text(if (task.completed) "Completed" else "Pending")
+                        },
+                        colors = AssistChipDefaults.assistChipColors()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = task.description,

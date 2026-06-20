@@ -46,6 +46,9 @@ fun AppNavigation() {
                     )
 
                     navController.popBackStack()
+                },
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -57,7 +60,7 @@ fun AppNavigation() {
                 EditTaskScreen(
                     taskId = taskId,
                     viewModel = taskViewModel,
-                    onDone = {
+                    onBack = {
                         navController.popBackStack()
                     }
                 )
