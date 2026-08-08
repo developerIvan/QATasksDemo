@@ -122,6 +122,18 @@ fun EditTaskScreen(
                 onClick = {
                     val previous = task
 
+                    // If we cannot locate the previous value, just go back.
+                    if (previous == null) {
+                        onBack()
+                        return@Button
+                    }
+
+                    val updated = previous.copy(
+                        title = title,
+                        description = description
+                    )
+
+                    // Optimistic local update
                     viewModel.updateTask(
                         id = taskId,
                         title = title,
@@ -129,12 +141,6 @@ fun EditTaskScreen(
                     )
 
                     scope.launch {
-                        // If we cannot locate the previous value, just go back.
-                        if (previous == null) {
-                            onBack()
-                            return@launch
-                        }
-
                         val result = snackbarHostState.showSnackbar(
                             message = "Task updated",
                             actionLabel = "Undo",
@@ -142,10 +148,17 @@ fun EditTaskScreen(
                         )
 
                         if (result == SnackbarResult.ActionPerformed) {
+                            // Revert local state, do not hit the API.
                             viewModel.updateTask(
                                 id = taskId,
                                 title = previous.title,
                                 description = previous.description
+                            )
+                        } else {
+                            // Commit remote update only if user didn't undo.
+                            viewModel.commitUpdate(
+                                updated = updated,
+                                previous = previous
                             )
                         }
 

@@ -59,7 +59,17 @@ fun TaskCard(
             ) {
                 val textDecoration = if (task.completed) TextDecoration.LineThrough else null
 
-                Row(
+
+
+
+
+
+
+
+
+
+
+                                Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -70,6 +80,7 @@ fun TaskCard(
                         modifier = Modifier.weight(1f)
                     )
 
+                    // Completion status chip
                     AssistChip(
                         onClick = onToggleCompleted,
                         label = {
@@ -77,7 +88,26 @@ fun TaskCard(
                         },
                         colors = AssistChipDefaults.assistChipColors()
                     )
+
+                    // Sync badge if this is a temporary (negative id) task
+                    if (task.id < 0) {
+                        AssistChip(
+                            onClick = {},
+                            label = { Text("Pending sync") },
+                            colors = AssistChipDefaults.assistChipColors(),
+                            modifier = Modifier.testTag("sync_badge_${task.id}")
+                        )
+                    }
                 }
+
+
+
+
+
+
+
+
+
 
                 Spacer(modifier = Modifier.height(6.dp))
 
