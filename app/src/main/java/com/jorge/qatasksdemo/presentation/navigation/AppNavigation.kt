@@ -1,7 +1,10 @@
 package com.jorge.qatasksdemo.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jorge.qatasksdemo.di.ServiceLocator
+import com.jorge.qatasksdemo.presentation.navigation.screens.tasks.TaskViewModelFactory
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -15,7 +18,12 @@ import com.jorge.qatasksdemo.presentation.screens.tasks.TaskListScreen
 fun AppNavigation() {
 
     val navController = rememberNavController()
-    val taskViewModel: TaskViewModel = viewModel()
+    val context = LocalContext.current
+    val taskViewModel: TaskViewModel = viewModel(
+        factory = TaskViewModelFactory(
+            repository = ServiceLocator.provideTaskRepository(context)
+        )
+    )
 
     NavHost(
         navController = navController,
@@ -38,15 +46,16 @@ fun AppNavigation() {
         }
 
         composable("add_task") {
-            AddTaskScreen(
+                        AddTaskScreen(
                 onSave = { title, description ->
-                    taskViewModel.addTask(
+                    // Use optimistic offline create (will fall back to server create when online)
+                    taskViewModel.createTaskOptimistic(
                         title = title,
                         description = description
                     )
-
                     navController.popBackStack()
                 },
+
                 onBack = {
                     navController.popBackStack()
                 }
